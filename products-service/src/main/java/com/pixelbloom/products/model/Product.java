@@ -35,6 +35,9 @@ public class Product {
     @Enumerated(EnumType.STRING)
     private ProductStatus status;
 
+    @Column(name = "product_url", nullable = false)
+    private String productUrl;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
@@ -44,6 +47,7 @@ public class Product {
     @OneToMany(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id",referencedColumnName = "id",insertable = false,updatable = false)
     private List<Review> reviews;
+
 
     /**
      * @PrePersist and @PreUpdate are JPA entity
