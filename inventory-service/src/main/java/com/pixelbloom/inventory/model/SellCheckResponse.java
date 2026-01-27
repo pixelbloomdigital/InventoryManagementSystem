@@ -11,4 +11,7 @@ import java.util.List;
 public class SellCheckResponse {
     private List<SellItemResult> results;
 
+    public Boolean isSellable() {
+        return null;
+    }
 }

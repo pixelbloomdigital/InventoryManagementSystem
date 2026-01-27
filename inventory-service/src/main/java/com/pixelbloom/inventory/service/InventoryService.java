@@ -15,6 +15,7 @@ public interface InventoryService {
         // ===================== ADMIN APIs =====================
         Inventory addInventory(Inventory inventory);
 
+
         Inventory updatePrice(String barcode, PriceUpdateRequest request);
 
         void disableInventory(String barcode, Long adminId);
@@ -24,9 +25,9 @@ public interface InventoryService {
         Inventory updateInventoryStatus(String barcode, AdminInventoryUpdateRequest request);
 
         // ===================== ORDER ORCHESTRATION =====================
-        void reserveInventoryForOrder(InventoryReserveRequest request);
+        ReserveItemResponse reserveInventoryForOrder(InventoryReserveRequest request);
 
-        void releaseInventoryForOrder(Long orderId);
+    ReserveItemResponse releaseInventoryForOrder(InventoryReleaseRequest request);
 
       //  void confirmSale(InventoryConfirmSaleRequest request);
 
@@ -44,7 +45,7 @@ public interface InventoryService {
 
     List<DailySalesResponse> getDailySales(TransactionType type);
 
-    void confirmOrder(Long orderId);
+    void confirmOrder(String orderId);
 
     List<DailySalesResponse> getSales(TransactionType type, LocalDate fromDate, LocalDate toDate);
 

@@ -20,12 +20,14 @@ public class InventoryReservation {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private Long orderId;
+    private String orderNumber;
     private Long productId;
     private Long categoryId;
     private Long subcategoryId;
     private Long inventoryId;
     private int quantity;
+    @Column(unique = true, nullable = false)
+    private String barcode;
 
     @Enumerated(EnumType.STRING)
     private ReservationStatus reservationStatus;  //RESERVED, RELEASED, CONFIRMED

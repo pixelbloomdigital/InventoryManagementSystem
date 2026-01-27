@@ -8,4 +8,5 @@ public class ReserveItem {
     private Long categoryId;
     private Long subcategoryId;
     private int quantity;
+   // private String barcode;
 }

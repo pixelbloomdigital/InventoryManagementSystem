@@ -1,8 +1,10 @@
 package com.pixelbloom.inventory.repository;
 
+import com.pixelbloom.inventory.enums.ReturnStatus;
 import com.pixelbloom.inventory.enums.TransactionType;
 import com.pixelbloom.inventory.model.InventoryTransaction;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -46,5 +48,30 @@ public interface InventoryTransactionRepository  extends JpaRepository<Inventory
             nativeQuery = true
     )
     List<Object[]> getSalesByDate(@Param("type")String type, @Param("fromDate") LocalDate fromDate, @Param("toDate") LocalDate toDate);
+
+   // void updateStatusByOrderNumberAndBarcode(String orderNumber, String barcode, TransactionType transactionType);
+
+    @Modifying
+    @Query("UPDATE InventoryTransaction it SET it.transactionType = :status WHERE it.orderId = :orderNumber")
+    int updateStatusByOrderNumber(@Param("orderNumber") String orderNumber,
+                                  @Param("status") TransactionType status);
+
+    @Modifying
+    @Query("UPDATE InventoryTransaction it SET it.transactionType = :status WHERE it.inventoryId = :inventoryId")
+    int updateStatusByInventoryId(@Param("inventoryId") Long inventoryId,
+                                  @Param("status") TransactionType status);
+
+    @Modifying
+    @Query("UPDATE InventoryTransaction t SET t.returnStatus = :returnStatus, t.returnId = :returnId, t.updatedAt = CURRENT_TIMESTAMP WHERE t.inventoryId = :inventoryId")
+    void updateReturnStatusByInventoryId(@Param("inventoryId") Long inventoryId, @Param("returnStatus") ReturnStatus returnStatus, @Param("returnId") Long returnId);
+
+
+    @Modifying
+    @Query("UPDATE InventoryTransaction t SET t.returnReference = :returnReference, t.updatedAt = CURRENT_TIMESTAMP WHERE t.inventoryId = :inventoryId")
+    void updateReturnReferenceByInventoryId(@Param("inventoryId") Long inventoryId, @Param("returnReference") String returnReference);
+
+    List<InventoryTransaction> findByOrderIdAndInventoryId(String orderId, Long inventoryId);
+
+
 }
 

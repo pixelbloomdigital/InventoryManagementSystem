@@ -69,6 +69,7 @@ public class Inventory {
     private Boolean isCustomerReturned = false;
     private Boolean isWarehouseDamaged = false;
 
+    private LocalDateTime orderReturnedInitiatedAt;
     @Version
     private Long version;
 

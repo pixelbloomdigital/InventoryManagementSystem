@@ -4,5 +4,5 @@ public enum TransactionType {
     SALE,
     RETURN,
     DAMAGE,
-    ADJUSTMENT
+    RETURN_REQUESTED, RETURN_INITIATED, ADJUSTMENT
 }

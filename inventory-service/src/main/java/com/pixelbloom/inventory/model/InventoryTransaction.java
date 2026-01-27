@@ -1,5 +1,6 @@
 package com.pixelbloom.inventory.model;
 
+import com.pixelbloom.inventory.enums.ReturnStatus;
 import com.pixelbloom.inventory.enums.TransactionType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -34,7 +35,9 @@ public class InventoryTransaction {
     @Column(name = "transaction_date")
     private LocalDateTime transactionDate;
 
-    private Long orderId;
+    private String orderId;
+
+    private Long returnId;
 
     private Long productId;
     private Long categoryId;
@@ -58,13 +61,21 @@ public class InventoryTransaction {
         }
     }
 
+    @Enumerated(EnumType.STRING)
+    private ReturnStatus returnStatus;
+
+    private String returnReference;  // Track return by reference
+
+
+
+    private LocalDateTime updatedAt;
     /* =====================
        Static Factory Method InventoryTransaction Factory Method entity should own the creation logic
        ===================== */
 
     public static InventoryTransaction sale(
             Inventory inventory,
-            Long orderId,
+            String orderId,
             int quantity
     ) {
         InventoryTransaction tx = new InventoryTransaction();

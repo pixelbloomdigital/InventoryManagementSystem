@@ -90,6 +90,7 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
             @Param("status") InventoryStatus status
     );
 
+
     @Query("""
     SELECT i FROM Inventory i
     WHERE i.inventoryStatus = :inventoryStatus
@@ -105,36 +106,15 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
             @Param("inventoryStatus") InventoryStatus inventoryStatus,
             @Param("platformStatus") PlatformStatus platformStatus);
 
-    @Query("""
-SELECT i FROM Inventory i
-WHERE i.productId = :productId
-AND i.categoryId = :categoryId
-AND i.subcategoryId = :subcategoryId
-AND i.inventoryStatus = :inventoryStatus
-AND i.platformStatus = :platformStatus
-AND i.conditionStatus = :conditionStatus
-ORDER BY i.id
-""")
-    List<Inventory> findTopNAvailable(Long productId, Long categoryId, Long subcategoryId, InventoryStatus inventoryStatus, PlatformStatus platformStatus, ConditionStatus conditionStatus, int quantity);
+    @Query("SELECT i FROM Inventory i WHERE i.productId = :productId AND i.categoryId = :categoryId AND i.subcategoryId = :subcategoryId AND i.inventoryStatus = :inventoryStatus AND i.platformStatus = :platformStatus AND i.conditionStatus = :conditionStatus ORDER BY i.id")
+    List<Inventory> findTopNAvailable(@Param("productId") Long productId,
+                                      @Param("categoryId") Long categoryId,
+                                      @Param("subcategoryId") Long subcategoryId,
+                                      @Param("inventoryStatus") InventoryStatus inventoryStatus,
+                                      @Param("platformStatus") PlatformStatus platformStatus,
+                                      @Param("conditionStatus") ConditionStatus conditionStatus,
+                                      Pageable pageable);
 
 
-    @Query("""
-SELECT i FROM Inventory i
-WHERE i.productId = :productId
-AND i.categoryId = :categoryId
-AND i.subcategoryId = :subcategoryId
-AND i.inventoryStatus = :status
-AND i.platformStatus = :platformStatus
-AND i.conditionStatus = :conditionStatus
-ORDER BY i.createdAt
-""")
-    List<Inventory> findTopNAvailablev(
-            Long productId,
-            Long categoryId,
-            Long subcategoryId,
-            InventoryStatus status,
-            PlatformStatus platformStatus,
-            ConditionStatus conditionStatus,
-            Pageable pageable
-    );
+    boolean existsByBarcode(String barcode);
 }

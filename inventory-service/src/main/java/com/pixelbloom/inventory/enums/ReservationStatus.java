@@ -5,7 +5,7 @@ import com.pixelbloom.inventory.exception.InvalidEnumValueException;
 public enum ReservationStatus {
     RESERVED,
     CONFIRMED,
-    RELEASED;
+    RELEASED, REFUND_REQUESTED, RETURN_REQUESTED, RETURN_INITIATED;
 
   /*  public static ReservationStatus from(String value) {
         try {
