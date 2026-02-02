@@ -1,0 +1,253 @@
+version: "3.8"
+
+services:
+
+  ## ================= MYSQL DATABASES =================
+
+  mysql-auth:
+    image: mysql:8.0
+    container_name: mysql-auth
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: imsauthdb
+    ports:
+      - "3307:3306"
+    volumes:
+      - ./mysql_auth_data:/var/lib/mysql
+
+  mysql-inventory:
+    image: mysql:8.0
+    container_name: mysql-inventory
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: inventorydb
+    ports:
+      - "3308:3306"
+    volumes:
+      - ./mysql_inventory_data:/var/lib/mysql
+
+  mysql-orders:
+    image: mysql:8.0
+    container_name: mysql-orders
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: ordersdb
+    ports:
+      - "3309:3306"
+    volumes:
+      - ./mysql_orders_data:/var/lib/mysql
+
+  mysql-products:
+    image: mysql:8.0
+    container_name: mysql-products
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: imsproductsdb
+    ports:
+      - "3310:3306"
+    volumes:
+      - ./mysql_products_data:/var/lib/mysql
+
+  mysql-email:
+    image: mysql:8.0
+    container_name: mysql-email
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: emaildb
+    ports:
+      - "3311:3306"
+    volumes:
+      - ./mysql_email_data:/var/lib/mysql
+
+  mysql-shipping:
+    image: mysql:8.0
+    container_name: mysql-shipping
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: shippingdb
+    ports:
+      - "3312:3306"
+    volumes:
+      - ./mysql_shipping_data:/var/lib/mysql
+
+  mysql-payment:
+    image: mysql:8.0
+    container_name: mysql-payment
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: paymentdb
+    ports:
+      - "3313:3306"
+    volumes:
+      - ./mysql_payment_data:/var/lib/mysql
+
+  ## ================= KAFKA STACK =================
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.0.1
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+
+  kafka:
+    image: confluentinc/cp-kafka:7.0.1
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_INTERNAL
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+  ## ================= OBSERVABILITY =================
+
+  zipkin:
+    image: openzipkin/zipkin:2.24
+    container_name: zipkin
+    ports:
+      - "9411:9411"
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+
+  grafana:
+    image: grafana/grafana-oss
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    links:
+      - prometheus
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+    volumes:
+      - ./grafana:/var/lib/grafana
+
+  ## ================= SPRING CLOUD =================
+
+  service-registry:
+    image: pixelbloom/service-registry:latestv4
+    container_name: service-registry
+    environment:
+      EUREKA_CLIENT_SERVICE_URL_DEFAULT_ZONE: http://localhost:8761/eureka
+    ports:
+      - "8761:8761"
+
+  auth-server:
+    image: pixelbloom/auth-server:latestv4
+    container_name: auth-server
+    environment:
+      Spring_DATASOURCE_URL: jdbc:mysql://mysql-auth:3306/imsauthdb?allowPublicKeyRetrieval=true&useSSL=false
+      Spring_DATASOURCE_USERNAME: root
+      Spring_DATASOURCE_PASSWORD: root
+    ports:
+      - "2000:2000"
+    depends_on:
+      - mysql-auth
+
+  api-gateway:
+    image: pixelbloom/api-gateway:latestv4
+    container_name: api-gateway
+    ports:
+      - "9999:9999"
+    depends_on:
+      - service-registry
+      - auth-server
+
+  inventory-service:
+    image: pixelbloom/inventory-service:latestv4
+    container_name: inventory-service
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-inventory:3306/inventorydb?allowPublicKeyRetrieval=true&useSSL=false
+    ports:
+      - "9093:9093"
+    depends_on:
+      - mysql-inventory
+      - service-registry
+
+  orders-service:
+    image: pixelbloom/order-service:latestv4
+    container_name: orders-service
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-orders:3306/ordersdb?allowPublicKeyRetrieval=true&useSSL=false
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      SPRING_KAFKA_TEMPLATE_DEFAULT_TOPIC: order-topic
+      SPRING_KAFKA_CONSUMER_GROUP-ID: order-group
+    ports:
+      - "9095:9095"
+    depends_on:
+      - mysql-orders
+      - inventory-service
+      - products-service
+      - email-service
+      - shipping-service
+      - payment-service
+      - kafka
+      - service-registry
+
+  products-service:
+    image: pixelbloom/products-service:latestv4
+    container_name: products-service
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-products:3306/imsproductsdb?allowPublicKeyRetrieval=true&useSSL=false
+    ports:
+      - "9094:9094"
+    depends_on:
+      - mysql-products
+      - service-registry
+
+  email-service:
+    image: pixelbloom/email-service:latestv4
+    container_name: email-service
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-email:3306/emaildb?allowPublicKeyRetrieval=true&useSSL=false
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      SPRING_KAFKA_TEMPLATE_DEFAULT_TOPIC: email-topic
+      SPRING_KAFKA_CONSUMER_GROUP-ID: email-group
+    ports:
+      - "9098:9098"
+    depends_on:
+      - mysql-email
+      - kafka
+      - service-registry
+
+  shipping-service:
+    image: pixelbloom/shipping-service:latestv4
+    container_name: shipping-service
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-shipping:3306/shippingdb?allowPublicKeyRetrieval=true&useSSL=false
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      SPRING_KAFKA_TEMPLATE_DEFAULT_TOPIC: shipping-topic
+      SPRING_KAFKA_CONSUMER_GROUP-ID: shipping-group
+    ports:
+      - "9097:9097"
+    depends_on:
+      - mysql-shipping
+      - kafka
+      - service-registry
+
+  payment-service:
+    image: pixelbloom/payment-service:latestv4
+    container_name: payment-service
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-payment:3306/paymentdb?allowPublicKeyRetrieval=true&useSSL=false
+    ports:
+      - "9096:9096"
+    depends_on:
+      - mysql-payment
+      - service-registry
